@@ -96,6 +96,17 @@ class QuickAudioEmbed {
 	function _the_content_callback($matches) {
 		$dimensions = explode('x', $this->settings['dimensions']);
 
+		if (preg_match('#rel="(?P<rel>[^\"]+)"#', $matches[0], $rel_match) > 0) {
+			foreach (explode(',', $rel_match['rel']) as $part) {
+				$values = explode('=', $part);
+				$key = array_shift($values);
+				$values = implode('=', $values);
+				switch ($key) {
+					case 'noembed':
+				}
+			}
+		}
+
 		return sprintf('
 		  <embed type="application/x-shockwave-flash"
 		         src="http://www.google.com/reader/ui/3247397568-audio-player.swf?audioUrl=%s"
