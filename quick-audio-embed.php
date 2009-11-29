@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
 class QuickAudioEmbed {
+	// @codeCoverageIgnoreStart
 	function init() {
 		$qae = new QuickAudioEmbed();
 		$qae->load();
@@ -42,11 +43,27 @@ class QuickAudioEmbed {
 		}
 	}
 
-	function load() {
+	function plugins_loaded() {
+		if (version_compare(PHP_VERSION, '5.0.0') === 1) {
+			add_action('init', array('QuickAudioEmbed', 'init'));
+		} else {
+			add_action('admin_notices', array('QuickAudioEmbed', 'admin_notices'));
+		}
+	}
+
+	function admin_notices() {
+		deactivate_plugins(plugin_basename(__FILE__)); ?>
+		<div class="updated fade"><p><?php _e('You need to be running at least PHP 5 to use Quick Audio Embed. Plugin <strong>not</strong> activated.') ?></p></div>
+	<?php }
+
+	function __construct() {
 		$this->settings = array(
 			'dimensions' => '300x50'
 		);
+	}
+	// @codeCoverageIgnoreEnd
 
+	function load() {
 		$options = get_option('quick-audio-embed-settings');
 		if (is_array($options)) {
 			$this->settings = array_merge($this->settings, $options);
@@ -86,14 +103,11 @@ class QuickAudioEmbed {
 		return null;
 	}
 
+	// @codeCoverageIgnoreStart
 	function admin_menu() {
 		add_settings_section('quick-audio-embed', __('Quick Audio Embed', 'quick-audio-embed'), array(&$this, 'media_settings'), 'media');
 
 		add_settings_field('qae-dimensions', __('Dimensions', 'quick-audio-embed'), array(&$this, 'qae_dimensions'), 'media', 'quick-audio-embed');
-	}
-
-	function the_content($content = '') {
-		return preg_replace_callback('#<a[^\>]+href="(?P<url>[^\"]+\.mp3)"[^\>]*>.*</a>#mis', array(&$this, '_the_content_callback'), $content);
 	}
 
 	function media_settings() { ?>
@@ -107,6 +121,11 @@ class QuickAudioEmbed {
 			<em>The dimensions of the player as <strong>width</strong>x<strong>height</strong>: <code>300x50</code></em>
 		</p>
 	<?php }
+	// @codeCoverageIgnoreEnd
+
+	function the_content($content = '') {
+		return preg_replace_callback('#<a[^\>]+href="(?P<url>[^\"]+\.mp3)"[^\>]*>.*</a>#mis', array(&$this, '_the_content_callback'), $content);
+	}
 
 	function _the_content_callback($matches) {
 		$dimensions = explode('x', $this->settings['dimensions']);
@@ -124,7 +143,7 @@ class QuickAudioEmbed {
 
 		return sprintf('
 		  <embed type="application/x-shockwave-flash"
-		         src="http://www.google.com/reader/ui/3247397568-audio-player.swf?audioUrl=%s"
+		         src="http://www.google.com/reader/ui/3247397568-audio-player.swf?audioUrl=%s&amp;play=true"
 		         width="%d"
 		         height="%d"
 		         allowscriptaccess="never"
@@ -136,4 +155,4 @@ class QuickAudioEmbed {
 	}
 }
 
-add_action('init', array('QuickAudioEmbed', 'init'));
+add_action('plugins_loaded', array('QuickAudioEmbed', 'plugins_loaded'));
