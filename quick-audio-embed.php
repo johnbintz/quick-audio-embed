@@ -55,20 +55,35 @@ class QuickAudioEmbed {
 
 	function save($info) {
 		foreach ($info as $key => $value) {
-			switch ($key) {
-				case 'dimensions':
-					if (count($result = explode('x', $value)) !== 2) {
-						unset($info[$key]);
-					} else {
-						$result = array_map('intval', $result);
-						$info[$key] = implode('x', $result);
-					}
-					break;
+			if (method_exists($this, "_save_${key}")) {
+				$result = $this->{"_save_${key}"}($value);
+				if (is_null($result)) {
+					unset($info[$key]);
+				} else {
+					$info[$key] = $result;
+				}
 			}
 		}
 
 		$this->settings = $info;
 		update_option('quick-audio-embed-settings', $info);
+	}
+
+	function _save_dimensions($value) {
+		if (is_string($value)) {
+			if (count($result = explode('x', $value)) === 2) {
+				$new_result = array();
+				foreach ($result as $v) {
+					if (is_numeric($v)) {
+						$new_result[] = $v;
+					} else {
+						return null;
+					}
+				}
+				return implode('x', array_map('intval', $new_result));
+			}
+		}
+		return null;
 	}
 
 	function admin_menu() {
